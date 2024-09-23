@@ -17,13 +17,19 @@ const addJob = async (req, res) => {
   }
 };
 
-// get job by user id
+// get all jobs by user id
 
-const getJobByUserId = async (req, res) => {
+const getAllJobsByUserId = async (req, res) => {
   try {
-    const job = await Job.find({ owner: req.body.owner }).populate("owner");
+    const userJobs = await Job.find({ owner: req.body.userId });
+    const invitedJobs = await Job.find({
+      "invitedUsers.user": req.body.userId,
+      "invitedUsers.accepted": true,
+    });
 
-    res.status(200).json({ message: "Jobs uploaded", job: job });
+    const allJobs = [...userJobs, ...invitedJobs];
+
+    res.status(200).json({ message: "Jobs uploaded", allJobs: allJobs });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -109,7 +115,7 @@ const acceptInvitation = async (req, res) => {
 
 module.exports = {
   addJob: addJob,
-  getJobByUserId: getJobByUserId,
+  getAllJobsByUserId: getAllJobsByUserId,
   inviteToJob: inviteToJob,
   checkInvitations: checkInvitations,
   acceptInvitation: acceptInvitation,

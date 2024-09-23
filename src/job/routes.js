@@ -3,7 +3,7 @@ const jobRouter = Router();
 
 const {
   addJob,
-  getJobByUserId,
+  getAllJobsByUserId,
   inviteToJob,
   checkInvitations,
   acceptInvitation,
@@ -14,7 +14,7 @@ jobRouter.post("/job/addJob", addJob);
 
 // View all Jobs by user id
 
-jobRouter.get("/job/getJobByUser", getJobByUserId);
+jobRouter.get("/job/getJobByUser", getAllJobsByUserId);
 
 // Invite to job
 jobRouter.post("/job/inviteToJob", inviteToJob);

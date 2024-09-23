@@ -1,0 +1,10 @@
+ const ownedJobs = await Job.find({ owner: userId });
+
+    // Find jobs where the user is invited and has accepted the invitation
+    const invitedJobs = await Job.find({
+      'invitedUsers.user': userId,
+      'invitedUsers.accepted': true
+    });
+
+    // Combine results: owned jobs first, then invited jobs
+    const allJobs = [...ownedJobs, ...invitedJobs];
