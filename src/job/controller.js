@@ -6,7 +6,7 @@ const addJob = async (req, res) => {
   try {
     const newJob = new Job({
       title: req.body.title,
-      owner: req.body.owner,
+      owner: req.body.userId,
     });
 
     await newJob.save();
