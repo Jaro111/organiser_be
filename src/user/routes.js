@@ -1,14 +1,23 @@
 const { Router } = require("express");
 const userRouter = Router();
 
-const { addUser, getAllUsers } = require("./controller");
+const { addUser, getAllUsers, logIn } = require("./controller");
+const { hashPass, comparePass, tokenCheck } = require("../middleware/auth");
 
-//add new user
+//register new user
 
-userRouter.post("/user/addUser", addUser);
+userRouter.post("/user/addUser", hashPass, addUser);
+
+// LogIn
+
+userRouter.post("/user/logIn", comparePass, logIn);
 
 // get Users
 
 userRouter.get("/user/getAll", getAllUsers);
+
+// tokenCheck
+
+userRouter.get("/user/authCheck", tokenCheck, logIn);
 
 module.exports = userRouter;
