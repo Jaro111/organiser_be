@@ -38,8 +38,6 @@ const comparePass = async (req, res, next) => {
 // TOKEN CHECK
 const tokenCheck = async (req, res, next) => {
   try {
-    console.log(req.header("Authorization"));
-
     if (!req.header("Authorization")) {
       throw new Error("No token Pass");
     }

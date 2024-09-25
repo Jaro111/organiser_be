@@ -29,7 +29,7 @@ const logIn = async (req, res) => {
         .status(200)
         .json({ message: "Succesfull persistant Log In", user: user });
     }
-    console.log("BLABLABLA");
+
     const token = await jwt.sign(
       { id: req.user._id.toString() },
       process.env.SECRET
@@ -38,6 +38,7 @@ const logIn = async (req, res) => {
     const user = {
       username: req.user.username,
       id: req.user.id,
+      email: req.user.email,
       token: token,
     };
 
@@ -50,6 +51,9 @@ const logIn = async (req, res) => {
 // Get Users
 const getAllUsers = async (req, res) => {
   try {
+    if (!req.authCheck) {
+      res.status(200).json({ message: "You are nit authorized" });
+    }
     const users = await User.find();
 
     res.status(200).json({ message: "Success", uses: users });

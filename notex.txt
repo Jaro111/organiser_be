@@ -8,3 +8,5 @@
 
     // Combine results: owned jobs first, then invited jobs
     const allJobs = [...ownedJobs, ...invitedJobs];
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2ZjJlYjAzYWFmZjBiNWIyZjAyMTg0OCIsImlhdCI6MTcyNzI2ODgyNn0.n4SYi5dcgd5IuG9kmeN2ZmZCoCJZKrK7wAv9ukcpmAU

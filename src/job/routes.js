@@ -9,12 +9,14 @@ const {
   acceptInvitation,
 } = require("./controller");
 
+const { tokenCheck } = require("../middleware/auth");
+
 // add new Job
-jobRouter.post("/job/addJob", addJob);
+jobRouter.post("/job/addJob", tokenCheck, addJob);
 
 // View all Jobs by user id
 
-jobRouter.get("/job/getJobByUser", getAllJobsByUserId);
+jobRouter.get("/job/getJobByUser", tokenCheck, getAllJobsByUserId);
 
 // Invite to job
 jobRouter.post("/job/inviteToJob", inviteToJob);
