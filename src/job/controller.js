@@ -6,7 +6,7 @@ const addJob = async (req, res) => {
   try {
     const newJob = new Job({
       title: req.body.title,
-      owner: req.body.userId,
+      owner: req.authCheck.id,
     });
 
     await newJob.save();
@@ -21,7 +21,7 @@ const addJob = async (req, res) => {
 
 const getAllJobsByUserId = async (req, res) => {
   try {
-    const userJobs = await Job.find({ owner: req.body.userId });
+    const userJobs = await Job.find({ owner: req.authCheck.id });
     const invitedJobs = await Job.find({
       "invitedUsers.user": req.body.userId,
       "invitedUsers.accepted": true,
