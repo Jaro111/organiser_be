@@ -23,15 +23,50 @@ const getAllJobsByUserId = async (req, res) => {
   try {
     const userJobs = await Job.find({ owner: req.authCheck.id });
     const invitedJobs = await Job.find({
-      "invitedUsers.user": req.body.userId,
+      "invitedUsers.user": req.authCheck.id,
       "invitedUsers.accepted": true,
     });
-
+    console.log(invitedJobs);
     const allJobs = [...userJobs, ...invitedJobs];
 
     res.status(200).json({ message: "Jobs uploaded", allJobs: allJobs });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// get all invited users by job Id with accepted invitations
+
+const getUsersByJobId = async (req, res) => {
+  try {
+    const job = await Job.findById(req.body.jobId)
+      .populate({
+        path: "invitedUsers.user",
+        select: "username email",
+      })
+      .populate({
+        path: "task",
+        select: "taskTitle userId",
+      });
+
+    if (!job) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+
+    // Filter users who accepted the invitation
+    const acceptedUsers = job.invitedUsers.filter((user) => user.accepted);
+
+    const response = {
+      owner: job.owner,
+      id: job._id,
+      title: job.title,
+      task: job.task,
+      acceptedUsers: acceptedUsers,
+    };
+
+    res.status(200).json({ message: "Jobs uploaded", job: response });
+  } catch (error) {
+    res.status(500)({ message: error.message, error: error });
   }
 };
 
@@ -119,4 +154,5 @@ module.exports = {
   inviteToJob: inviteToJob,
   checkInvitations: checkInvitations,
   acceptInvitation: acceptInvitation,
+  getUsersByJobId: getUsersByJobId,
 };
