@@ -134,14 +134,10 @@ const updateTaskStatus = async (req, res) => {
     if (!isOwner && !isInvitedUser) {
       return res.status(403).json({ error: "You are not athorized" });
     }
-    if (req.body.status === "true") {
-      task.status = true;
-      await task.save();
-    }
-    if (req.body.status === "false") {
-      task.status = false;
-      await task.save();
-    }
+
+    task.status = !task.status;
+
+    await task.save();
 
     res.status(200).json({ message: "Task status updated", task: task });
   } catch (error) {
