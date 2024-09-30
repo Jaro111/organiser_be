@@ -65,8 +65,6 @@ const getJobDetails = async (req, res) => {
       users.push(user.user);
     });
 
-    console.log(users);
-
     const response = {
       owner: job.owner,
       id: job._id,
@@ -146,7 +144,23 @@ const checkInvitations = async (req, res) => {
       select: "username email",
     });
 
-    res.status(200).json({ message: "Success", job: job });
+    const filteredJobs = job
+      .map((item) => {
+        const filteredInvitedUsers = item.invitedUsers.filter(
+          (invitee) =>
+            invitee.user.toString() === req.body.userId &&
+            invitee.accepted === false
+        );
+        if (filteredInvitedUsers.length > 0) {
+          return {
+            ...item.toObject(), // convert job to plain object to modify it
+            invitedUsers: filteredInvitedUsers,
+          };
+        }
+      })
+      .filter((item) => item);
+
+    res.status(200).json({ message: "Success", job: filteredJobs });
   } catch (error) {
     res.status(501).json({ message: error.message });
   }
