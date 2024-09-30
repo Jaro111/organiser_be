@@ -1,42 +1,8 @@
-const updateTask = async (req, res) => {
-  const { taskId } = req.params;
-  const { taskTitle, userId } = req.body; // Extract fields to be updated
-  const currentUserId = req.user._id; // Get the logged-in user's ID
+// Delete the task
+    await Task.findByIdAndDelete(taskId);
 
-  try {
-    // Step 1: Find the Task by its ID
-    const task = await Task.findById(taskId);
-
-    if (!task) {
-      return res.status(404).json({ error: "Task not found" });
-    }
-
-    // Step 2: Check if the user is authorized to update the task
-    const isOwner = task.userId.toString() === currentUserId.toString(); // Check if the user is the owner of the task
-
-    // Only allow the update if the user is the owner
-    if (!isOwner) {
-      return res.status(403).json({ error: "Not authorized to update this task" });
-    }
-
-    // Step 3: Update the task title and/or user ID
-    if (taskTitle) {
-      task.taskTitle = taskTitle; // Update the task title if provided
-    }
-
-    // Update userId only if the current user is the task owner
-    if (userId) {
-      task.userId = userId; // Update the user ID if provided
-    }
-
-    task.updatedAt = Date.now(); // Update the timestamp
-
-    await task.save(); // Save the updated task to the database
-
-    return res.status(200).json({ message: "Task updated successfully", task });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Server error" });
-  }
-};
+    // Remove task from the job using $pull
+    await Job.findByIdAndUpdate(task.jobId, {
+      $pull: { task: taskId },
+    });
   

@@ -4,6 +4,12 @@ const jobSchema = new mongoose.Schema({
   title: { type: String, required: true },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   task: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }],
+  shopingList: [
+    {
+      title: { type: String, required: true },
+      status: { type: String, default: false },
+    },
+  ],
   invitedUsers: [
     {
       user: {

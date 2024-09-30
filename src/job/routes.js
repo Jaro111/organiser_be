@@ -7,7 +7,8 @@ const {
   inviteToJob,
   checkInvitations,
   acceptInvitation,
-  getUsersByJobId,
+  getJobDetails,
+  getJobById,
 } = require("./controller");
 
 const { tokenCheck } = require("../middleware/auth");
@@ -20,10 +21,13 @@ jobRouter.post("/job/addJob", tokenCheck, addJob);
 jobRouter.get("/job/getJobByUser", tokenCheck, getAllJobsByUserId);
 
 // Get invited users which accepted invitation by job Id and tasks
-jobRouter.post("/job/getInvitedUsers", getUsersByJobId);
+jobRouter.post("/job/getJobDetails", tokenCheck, getJobDetails);
+//
+// getJonById
+jobRouter.get("/job/getJobById", getJobById);
 
 // Invite to job
-jobRouter.post("/job/inviteToJob", inviteToJob);
+jobRouter.post("/job/inviteToJob", tokenCheck, inviteToJob);
 
 // checkInvitations
 
@@ -31,6 +35,6 @@ jobRouter.post("/job/checkInvitations", checkInvitations);
 
 // acceptInvitation
 
-jobRouter.post("/job/acceptInvitation", acceptInvitation);
+jobRouter.post("/job/acceptInvitation", tokenCheck, acceptInvitation);
 
 module.exports = jobRouter;

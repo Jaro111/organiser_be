@@ -26,7 +26,6 @@ const getAllJobsByUserId = async (req, res) => {
       "invitedUsers.user": req.authCheck.id,
       "invitedUsers.accepted": true,
     });
-    console.log(invitedJobs);
     const allJobs = [...userJobs, ...invitedJobs];
 
     res.status(200).json({ message: "Jobs uploaded", allJobs: allJobs });
@@ -35,11 +34,15 @@ const getAllJobsByUserId = async (req, res) => {
   }
 };
 
-// get all invited users by job Id with accepted invitations
+// get all invited users and job details by job Id with accepted invitations
 
-const getUsersByJobId = async (req, res) => {
+const getJobDetails = async (req, res) => {
   try {
     const job = await Job.findById(req.body.jobId)
+      .populate({
+        path: "owner",
+        select: "username email",
+      })
       .populate({
         path: "invitedUsers.user",
         select: "username email",
@@ -55,18 +58,26 @@ const getUsersByJobId = async (req, res) => {
 
     // Filter users who accepted the invitation
     const acceptedUsers = job.invitedUsers.filter((user) => user.accepted);
+    const owner = job.owner;
+    const users = [];
+    users.push(owner);
+    acceptedUsers.map((user) => {
+      users.push(user.user);
+    });
+
+    console.log(users);
 
     const response = {
       owner: job.owner,
       id: job._id,
       title: job.title,
       task: job.task,
-      acceptedUsers: acceptedUsers,
+      users: users,
     };
 
     res.status(200).json({ message: "Jobs uploaded", job: response });
   } catch (error) {
-    res.status(500)({ message: error.message, error: error });
+    res.status(500).json({ message: error.message, error: error });
   }
 };
 
@@ -82,7 +93,7 @@ const inviteToJob = async (req, res) => {
     if (!job) return res.status(500).json({ error: "Job not found" });
     // Check the owner
 
-    if (job.owner.toString() !== req.body.ownerId)
+    if (job.owner.toString() !== req.authCheck.id)
       return res.status(403).json({ error: "only owner can invite users" });
 
     // check if the user is already in the invitedUserArray
@@ -94,19 +105,29 @@ const inviteToJob = async (req, res) => {
       return res.status(200).json({ message: "User already invited" });
 
     // Check if You are nit inviting yourself
-    if (req.body.invitedUserId === req.body.ownerId)
+    if (req.body.invitedUserId === req.authCheck.id)
       return res.status(200).json({ message: "You can't invite yourself" });
 
     // Finall if everyhing is fine add userId to invited list
     job.invitedUsers.push({ user: req.body.invitedUserId, accepted: false });
     await job.save();
 
-    res.status(200).json({ message: "User invited", job: job });
+    res.status(200).json({ message: "Successfully invited", job: job });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 //
+
+const getJobById = async (req, res) => {
+  try {
+    const job = await Job.findById(req.body.jobId);
+
+    res.status(200).json({ message: "Job uploaded", job: job });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // accept invitattion
 // 1. find a job where invited users include my id. If not found return "No invitations"
@@ -120,11 +141,14 @@ const checkInvitations = async (req, res) => {
     const job = await Job.find({
       "invitedUsers.user": req.body.userId,
       "invitedUsers.accepted": false,
+    }).populate({
+      path: "owner",
+      select: "username email",
     });
 
     res.status(200).json({ message: "Success", job: job });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(501).json({ message: error.message });
   }
 };
 
@@ -136,13 +160,15 @@ const acceptInvitation = async (req, res) => {
     console.log(job);
 
     const invitation = job.invitedUsers.find(
-      (u) => u.user._id.toString() === req.body.userId && u.accepted === false
+      (u) => u.user._id.toString() === req.authCheck.id && u.accepted === false
     );
 
     invitation.accepted = true;
     job.save();
 
-    res.status(200).json({ message: "Success", invitation: invitation });
+    res
+      .status(200)
+      .json({ message: "Invitation accepted", invitation: invitation });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -154,5 +180,6 @@ module.exports = {
   inviteToJob: inviteToJob,
   checkInvitations: checkInvitations,
   acceptInvitation: acceptInvitation,
-  getUsersByJobId: getUsersByJobId,
+  getJobDetails: getJobDetails,
+  getJobById: getJobById,
 };
