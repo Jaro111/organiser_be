@@ -49,7 +49,7 @@ const getJobDetails = async (req, res) => {
       })
       .populate({
         path: "task",
-        select: "taskTitle userId",
+        select: "taskTitle userId status",
       });
 
     if (!job) {
