@@ -1,8 +1,36 @@
-// Delete the task
-    await Task.findByIdAndDelete(taskId);
+const checkInvitations = async (req, res) => {
+  try {
+    const userId = req.body.userId;
 
-    // Remove task from the job using $pull
-    await Job.findByIdAndUpdate(task.jobId, {
-      $pull: { task: taskId },
+    // Step 1: Find all jobs where the user is invited and the invitation is not accepted
+    const jobs = await Job.find({
+      "invitedUsers.user": userId,
+      "invitedUsers.accepted": false,
+    }).populate({
+      path: "owner",
+      select: "username email",
     });
+
+    // Step 2: Map over each job and filter the invitedUsers array
+    const filteredJobs = jobs.map((job) => {
+      // Filter invitedUsers to only include the relevant user who has not yet accepted
+      const filteredInvitedUsers = job.invitedUsers.filter(
+        (invitee) =>
+          invitee.user.toString() === userId &&
+          invitee.accepted === false
+      );
+
+      // Return the job object but with filtered invitedUsers
+      return {
+        ...job.toObject(), // Convert Mongoose document to plain object
+        invitedUsers: filteredInvitedUsers, // Include only the relevant invitee
+      };
+    });
+
+    // Step 3: Send the filtered jobs array in the response
+    res.status(200).json({ message: "Success", jobs: filteredJobs });
+  } catch (error) {
+    res.status(501).json({ message: error.message });
+  }
+};
   
