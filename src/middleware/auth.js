@@ -54,7 +54,7 @@ const tokenCheck = async (req, res, next) => {
     req.authCheck = user;
     next();
   } catch (error) {
-    res.status(501).json({ message: error.message, error: error });
+    res.status(500).json({ message: error.message, error: error });
   }
 };
 

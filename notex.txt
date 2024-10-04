@@ -1,36 +1,88 @@
-const checkInvitations = async (req, res) => {
-  try {
-    const userId = req.body.userId;
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
+const connection = require("../src/db/connection");
+const userRouter = require("./user/routes");
+const jobRouter = require("./job/routes");
+const taskRouter = require("./tasks/routes");
+const Job = require("../src/job/model");
+const Task = require("../src/tasks/model");
 
-    // Step 1: Find all jobs where the user is invited and the invitation is not accepted
-    const jobs = await Job.find({
-      "invitedUsers.user": userId,
-      "invitedUsers.accepted": false,
-    }).populate({
-      path: "owner",
-      select: "username email",
-    });
+const port = process.env.PORT || 5001;
+const app = express();
 
-    // Step 2: Map over each job and filter the invitedUsers array
-    const filteredJobs = jobs.map((job) => {
-      // Filter invitedUsers to only include the relevant user who has not yet accepted
-      const filteredInvitedUsers = job.invitedUsers.filter(
-        (invitee) =>
-          invitee.user.toString() === userId &&
-          invitee.accepted === false
-      );
+app.use(cors());
+app.use(express.json());
 
-      // Return the job object but with filtered invitedUsers
-      return {
-        ...job.toObject(), // Convert Mongoose document to plain object
-        invitedUsers: filteredInvitedUsers, // Include only the relevant invitee
-      };
-    });
+const server = http.createServer(app);
 
-    // Step 3: Send the filtered jobs array in the response
-    res.status(200).json({ message: "Success", jobs: filteredJobs });
-  } catch (error) {
-    res.status(501).json({ message: error.message });
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", // Update in production
+    methods: ["GET", "POST", "DELETE"],
+  },
+});
+
+connection()
+  .then(() => console.log("Database connected"))
+  .catch((error) => {
+    console.error("Database connection failed:", error);
+  });
+
+// Setup socket.io connection
+io.on("connection", (socket) => {
+  console.log("New user connected: ", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected: ", socket.id);
+  });
+});
+
+app.use("/users", userRouter);
+app.use("/jobs", jobRouter);
+app.use("/tasks", taskRouter);
+
+// Watch Job collection for changes
+const jobChangeStream = Job.watch();
+jobChangeStream.on("change", async (change) => {
+  console.log("Job change detected:", change);
+
+  if (change.operationType === "insert") {
+    const newJob = change.fullDocument;
+    io.emit("newJob", newJob);
   }
-};
+
+  if (change.operationType === "update") {
+    const updatedJob = await Job.findById(change.documentKey._id); // Fetch full document
+    io.emit("updateJob", updatedJob);
+  }
+});
+
+// Watch Task collection for changes
+const taskChangeStream = Task.watch();
+taskChangeStream.on("change", async (change) => {
+  console.log("Task change detected:", change);
+
+  if (change.operationType === "insert") {
+    const newTask = change.fullDocument;
+    io.emit("insert", newTask);
+  }
+
+  if (change.operationType === "update") {
+    const updatedTask = await Task.findById(change.documentKey._id); // Fetch full document
+    io.emit("update", updatedTask);
+  }
+
+  if (change.operationType === "delete") {
+    const deletedTaskId = change.documentKey._id;
+    io.emit("delete", { taskId: deletedTaskId });
+  }
+});
+
+server.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
   
