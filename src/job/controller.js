@@ -1,11 +1,15 @@
 const Job = require("./model");
 const User = require("../user/model");
+const Task = require("../tasks/model");
 
 // Create a new job
 const addJob = async (req, res) => {
   try {
+    // check if the user is already in the invitedUserArray
+
+    const { title } = req.body;
     const newJob = new Job({
-      title: req.body.title,
+      title: title,
       owner: req.authCheck.id,
     });
 
@@ -171,7 +175,6 @@ const acceptInvitation = async (req, res) => {
   try {
     // Find job by id
     const job = await Job.findById(req.body.jobId);
-    console.log(job);
 
     const invitation = job.invitedUsers.find(
       (u) => u.user._id.toString() === req.authCheck.id && u.accepted === false
@@ -187,6 +190,131 @@ const acceptInvitation = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// reject Invitation
+const rejectInvitation = async (req, res) => {
+  // Body Var
+  const { jobId } = req.body;
+
+  const job = await Job.findById(jobId);
+
+  const isInvitedUser = await job.invitedUsers.some(
+    (user) =>
+      user.user._id.toString() === req.authCheck.id && user.accepted === false
+  );
+
+  if (!isInvitedUser) {
+    res.status(403).json({ message: "You are not authorized" });
+  }
+  updatedJob = await Job.findByIdAndUpdate(
+    jobId,
+    {
+      $pull: { invitedUsers: { user: req.authCheck.id } },
+    },
+    { new: true }
+  );
+  res.status(200).json({ message: "Invitation rejected" });
+
+  try {
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// delete job
+
+const deleteJob = async (req, res) => {
+  try {
+    const job = await Job.findById(req.body.jobId);
+    // Check if job exist
+    if (!job) return res.status(500).json({ error: "Job not found" });
+    // Check the owner
+
+    if (job.owner.toString() !== req.authCheck.id)
+      return res.status(403).json({ error: "Only owner can delete job" });
+
+    // find and delete tasks
+
+    await Task.deleteMany({ jobId: req.body.jobId });
+
+    // Delete job
+
+    await Job.findByIdAndDelete(job._id);
+
+    //
+    res.status(200).json({ message: "Successfully Deleted Job" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// remove user from a job
+const removeUserFromJob = async (req, res) => {
+  try {
+    const job = await Job.findById(req.body.jobId);
+    // Check if job exist
+    if (!job) return res.status(500).json({ error: "Job not found" });
+    // Check the owner
+
+    if (job.owner.toString() !== req.authCheck.id)
+      return res.status(403).json({ error: "Only owner is authorized" });
+
+    // Remove user from list
+    const updatedJob = await Job.findByIdAndUpdate(
+      req.body.jobId,
+      { $pull: { invitedUsers: { user: req.body.invitedUserId } } }, // $pull based on the user field inside invitedUsers array
+      { new: true } // Return the updated document after modification
+    );
+
+    res.status(200).json({ message: "Updated", job: updatedJob });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const editList = async (req, res) => {
+  try {
+    // find the job
+    const job = await Job.findById(req.body.jobId);
+
+    if (!job) return res.status(404).json({ error: "Job not found" });
+
+    // Check if the user is the owner or invited user
+
+    const isOwner = (await job.owner.toString()) === req.authCheck.id;
+    const isInvitedUser = await job.invitedUsers.some(
+      (user) => user.user._id.toString() === req.authCheck.id && user.accepted
+    );
+
+    if (!isOwner && !isInvitedUser) {
+      return res.status(403).json({ error: "You are not athorized" });
+    }
+    if (req.body.action === "add") {
+      await job.shopingList.push({ title: req.body.title, status: false });
+      await job.save();
+      const updatedJob = await Job.findById(req.body.jobId);
+      res.status(200).json({ message: "Updated", job: updatedJob });
+    }
+    if (req.body.action === "delete") {
+      const updatedJob = await Job.findByIdAndUpdate(
+        job._id,
+        {
+          $pull: { shopingList: { _id: req.body.id } },
+        },
+        { new: true }
+      );
+      res.status(200).json({ message: "Updated", job: updatedJob });
+    }
+    if (req.body.action === "clear") {
+      job.shopingList = [];
+      job.save();
+
+      const updatedJob = await Job.findById(req.body.jobId);
+      res.status(200).json({ message: "Updated", job: updatedJob });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 module.exports = {
   addJob: addJob,
@@ -194,6 +322,10 @@ module.exports = {
   inviteToJob: inviteToJob,
   checkInvitations: checkInvitations,
   acceptInvitation: acceptInvitation,
+  rejectInvitation: rejectInvitation,
   getJobDetails: getJobDetails,
   getJobById: getJobById,
+  deleteJob: deleteJob,
+  removeUserFromJob: removeUserFromJob,
+  editList: editList,
 };
