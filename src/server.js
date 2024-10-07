@@ -21,7 +21,7 @@ const server = http.createServer(app);
 // Initialize socket.io and bind it to the HTTP server
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Adjust as necessary for security
+    origin: "http://localhost:3000", // Adjust as necessary for security
     methods: ["GET", "POST", "DELETE"],
   },
 });
