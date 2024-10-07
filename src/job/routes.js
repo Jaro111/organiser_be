@@ -7,8 +7,12 @@ const {
   inviteToJob,
   checkInvitations,
   acceptInvitation,
+  rejectInvitation,
   getJobDetails,
   getJobById,
+  deleteJob,
+  removeUserFromJob,
+  editList,
 } = require("./controller");
 
 const { tokenCheck } = require("../middleware/auth");
@@ -36,5 +40,17 @@ jobRouter.post("/job/checkInvitations", checkInvitations);
 // acceptInvitation
 
 jobRouter.post("/job/acceptInvitation", tokenCheck, acceptInvitation);
+
+// rejectInvitation
+jobRouter.post("/job/rejectInvitation", tokenCheck, rejectInvitation);
+
+// delete job
+jobRouter.delete("/job/deleteJob", tokenCheck, deleteJob);
+
+// remove user from job
+jobRouter.post("/job/removeUserFromJob", tokenCheck, removeUserFromJob);
+
+// editList
+jobRouter.post("/job/editList", tokenCheck, editList);
 
 module.exports = jobRouter;
