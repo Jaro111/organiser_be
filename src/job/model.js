@@ -7,7 +7,12 @@ const jobSchema = new mongoose.Schema({
   shopingList: [
     {
       title: { type: String, required: true },
-      status: { type: String, default: false },
+      status: { type: Boolean, default: false },
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
     },
   ],
   invitedUsers: [

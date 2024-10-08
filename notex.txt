@@ -1,88 +1,31 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const http = require("http");
-const { Server } = require("socket.io");
-const connection = require("../src/db/connection");
-const userRouter = require("./user/routes");
-const jobRouter = require("./job/routes");
-const taskRouter = require("./tasks/routes");
-const Job = require("../src/job/model");
-const Task = require("../src/tasks/model");
+const updateShopingListItemTitle = async (jobId, currentTitle, newTitle) => {
+  try {
+    // Find the job by ID
+    const job = await Job.findById(jobId);
+    
+    if (!job) {
+      console.log("Job not found");
+      return;
+    }
 
-const port = process.env.PORT || 5001;
-const app = express();
+    // Find the specific shopingList item by title
+    const shopingListItem = job.shopingList.find(item => item.title === currentTitle);
 
-app.use(cors());
-app.use(express.json());
+    if (!shopingListItem) {
+      console.log("Shoping list item not found");
+      return;
+    }
 
-const server = http.createServer(app);
+    // Update the title
+    shopingListItem.title = newTitle;
 
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:5173", // Update in production
-    methods: ["GET", "POST", "DELETE"],
-  },
-});
+    // Save the updated document
+    await job.save();
 
-connection()
-  .then(() => console.log("Database connected"))
-  .catch((error) => {
-    console.error("Database connection failed:", error);
-  });
-
-// Setup socket.io connection
-io.on("connection", (socket) => {
-  console.log("New user connected: ", socket.id);
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected: ", socket.id);
-  });
-});
-
-app.use("/users", userRouter);
-app.use("/jobs", jobRouter);
-app.use("/tasks", taskRouter);
-
-// Watch Job collection for changes
-const jobChangeStream = Job.watch();
-jobChangeStream.on("change", async (change) => {
-  console.log("Job change detected:", change);
-
-  if (change.operationType === "insert") {
-    const newJob = change.fullDocument;
-    io.emit("newJob", newJob);
+    console.log("Updated job:", job);
+    return job;
+  } catch (err) {
+    console.error("Error updating shopping list item title:", err);
+    throw err;
   }
-
-  if (change.operationType === "update") {
-    const updatedJob = await Job.findById(change.documentKey._id); // Fetch full document
-    io.emit("updateJob", updatedJob);
-  }
-});
-
-// Watch Task collection for changes
-const taskChangeStream = Task.watch();
-taskChangeStream.on("change", async (change) => {
-  console.log("Task change detected:", change);
-
-  if (change.operationType === "insert") {
-    const newTask = change.fullDocument;
-    io.emit("insert", newTask);
-  }
-
-  if (change.operationType === "update") {
-    const updatedTask = await Task.findById(change.documentKey._id); // Fetch full document
-    io.emit("update", updatedTask);
-  }
-
-  if (change.operationType === "delete") {
-    const deletedTaskId = change.documentKey._id;
-    io.emit("delete", { taskId: deletedTaskId });
-  }
-});
-
-server.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
-
-  
+};

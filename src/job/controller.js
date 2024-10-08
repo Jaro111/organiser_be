@@ -123,7 +123,10 @@ const inviteToJob = async (req, res) => {
 
 const getJobById = async (req, res) => {
   try {
-    const job = await Job.findById(req.body.jobId);
+    const job = await Job.findById(req.body.jobId).populate({
+      path: "shopingList.userId",
+      select: "username",
+    });
 
     res.status(200).json({ message: "Job uploaded", job: job });
   } catch (error) {
@@ -288,28 +291,46 @@ const editList = async (req, res) => {
     if (!isOwner && !isInvitedUser) {
       return res.status(403).json({ error: "You are not athorized" });
     }
+    // add Task
     if (req.body.action === "add") {
-      await job.shopingList.push({ title: req.body.title, status: false });
+      await job.shopingList.push({
+        title: req.body.title,
+        status: false,
+        userId: req.authCheck.id,
+      });
       await job.save();
       const updatedJob = await Job.findById(req.body.jobId);
       res.status(200).json({ message: "Updated", job: updatedJob });
     }
+    // Delete
     if (req.body.action === "delete") {
       const updatedJob = await Job.findByIdAndUpdate(
         job._id,
         {
-          $pull: { shopingList: { _id: req.body.id } },
+          $pull: { shopingList: { _id: req.body.itemId } },
         },
         { new: true }
       );
       res.status(200).json({ message: "Updated", job: updatedJob });
     }
+    // clear
     if (req.body.action === "clear") {
       job.shopingList = [];
       job.save();
 
       const updatedJob = await Job.findById(req.body.jobId);
       res.status(200).json({ message: "Updated", job: updatedJob });
+    }
+    // update status
+    if (req.body.action === "updateStatus") {
+      const shopingListItem = job.shopingList.find(
+        (item) => item._id.toString() === req.body.itemId
+      );
+      shopingListItem.status = !shopingListItem.status;
+      shopingListItem.userId = req.authCheck.id;
+      await job.save();
+
+      res.status(200).json({ message: "Updated", item: shopingListItem });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });

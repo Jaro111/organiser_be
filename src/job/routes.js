@@ -27,8 +27,8 @@ jobRouter.get("/job/getJobByUser", tokenCheck, getAllJobsByUserId);
 // Get invited users which accepted invitation by job Id and tasks
 jobRouter.post("/job/getJobDetails", tokenCheck, getJobDetails);
 //
-// getJonById
-jobRouter.get("/job/getJobById", getJobById);
+// getJobById
+jobRouter.post("/job/getJobById", tokenCheck, getJobById);
 
 // Invite to job
 jobRouter.post("/job/inviteToJob", tokenCheck, inviteToJob);
