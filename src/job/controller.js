@@ -243,8 +243,12 @@ const deleteJob = async (req, res) => {
 
     await Job.findByIdAndDelete(job._id);
 
+    const userJobs = await Job.find({ owner: req.authCheck.id });
+
     //
-    res.status(200).json({ message: "Successfully Deleted Job" });
+    res
+      .status(200)
+      .json({ message: "Successfully Deleted Job", jobs: userJobs });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
