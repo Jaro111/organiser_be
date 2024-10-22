@@ -62,8 +62,13 @@ jobChangeStream.on("change", (change) => {
     const updatedJob = change.updateDescription.updatedFields;
     io.emit("updateJob", updatedJob); // Emit the updated job to all clients
   }
-
   // Handle other MongoDB change events (like delete) as needed
+  if (change.operationType === "delete") {
+    const deletedJobId = change.documentKey._id;
+    io.emit("deleteJob", {
+      jobId: deletedJobId,
+    }); // Emit the deleted task ID to all clients
+  }
 });
 
 // Watch Task collection for changes
