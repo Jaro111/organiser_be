@@ -1,5 +1,6 @@
 const User = require("../user/model");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
 // Register
 const addUser = async (req, res) => {
@@ -62,4 +63,38 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-module.exports = { addUser: addUser, getAllUsers: getAllUsers, logIn: logIn };
+// updateUser
+
+const updateUser = async (req, res) => {
+  try {
+    if (!req.authCheck) {
+      res.status(200).json({ message: "You are nit authorized" });
+    }
+    if (req.body.choice === "username") {
+      const user = await User.findById(req.authCheck.id);
+      user.username = req.body.update;
+      await user.save();
+      res.status(200).json({ message: "Success", user: user });
+    } else if (req.body.choice === "email") {
+      const user = await User.findById(req.authCheck.id);
+      user.email = req.body.update;
+      await user.save();
+      res.status(200).json({ message: "Success", user: user });
+    } else if (req.body.choice === "password") {
+      const user = await User.findById(req.authCheck.id);
+      const saltRounds = parseInt(process.env.SALT_ROUNDS);
+      user.password = await bcrypt.hash(req.body.update, saltRounds);
+      await user.save();
+      res.status(200).json({ message: "Success", user: user });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error, message: error.message });
+  }
+};
+
+module.exports = {
+  addUser: addUser,
+  getAllUsers: getAllUsers,
+  logIn: logIn,
+  updateUser: updateUser,
+};
