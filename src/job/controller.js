@@ -260,10 +260,17 @@ const removeUserFromJob = async (req, res) => {
     const job = await Job.findById(req.body.jobId);
     // Check if job exist
     if (!job) return res.status(500).json({ error: "Job not found" });
-    // Check the owner
 
-    if (job.owner.toString() !== req.authCheck.id)
-      return res.status(403).json({ error: "Only owner is authorized" });
+    // Check if the user is the owner or invited user
+    const isOwner = (await job.owner.toString()) === req.authCheck.id;
+
+    const isInvitedUser = await job.invitedUsers.some(
+      (user) => user.user._id.toString() === req.authCheck.id && user.accepted
+    );
+
+    if (!isOwner && !isInvitedUser) {
+      return res.status(403).json({ error: "You are not athorized" });
+    }
 
     // Remove user from list
     const updatedJob = await Job.findByIdAndUpdate(
@@ -272,7 +279,19 @@ const removeUserFromJob = async (req, res) => {
       { new: true } // Return the updated document after modification
     );
 
-    res.status(200).json({ message: "Updated", job: updatedJob });
+    const userJobs = await Job.find({
+      owner: req.authCheck.id,
+    });
+
+    const jobsWhereInvited = await Job.find({
+      "invitedUsers.user": req.authCheck.id,
+    });
+    console.log(jobsWhereInvited);
+
+    const allJobs = [...userJobs, ...jobsWhereInvited];
+    res
+      .status(200)
+      .json({ message: "Updated", job: updatedJob, jobs: allJobs });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
