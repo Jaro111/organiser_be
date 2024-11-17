@@ -82,7 +82,7 @@ taskChangeStream.on("change", (change) => {
     io.emit("insertTask", newTask); // Emit the new task to all clients
   }
 
-  // Example: if a task is updated
+  // if a task is updated
   if (change.operationType === "update") {
     const updatedTask = change.updateDescription.updatedFields;
     io.emit("updateTask", updatedTask); // Emit the updated task to all clients
@@ -100,6 +100,3 @@ taskChangeStream.on("change", (change) => {
 server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
-// app.listen(port, () => {
-//   console.log(`Server is listening on port ${port}`);
-// });
