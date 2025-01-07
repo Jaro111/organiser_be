@@ -8,7 +8,6 @@ const hashPass = async (req, res, next) => {
   try {
     const hashPassword = await bcrypt.hash(req.body.password, salrRounds);
     req.body.password = hashPassword;
-    console.log("password", hashPassword);
     next();
   } catch (error) {
     res.status(501).json({ message: error.message, error: error });
