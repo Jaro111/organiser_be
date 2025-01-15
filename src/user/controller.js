@@ -7,21 +7,13 @@ const sendEmail = require("../utils/sendEmail");
 // Register
 const addUser = async (req, res) => {
   try {
-    const userExistCheck = await User.find({ username: req.body.usenname });
-    const emailExistCheck = await User.find({ email: req.body.email });
+    const user = await User.create({
+      username: req.body.username,
+      email: req.body.email,
+      password: req.body.password,
+    });
 
-    if (userExistCheck.length === 0 || emailExistCheck === 0) {
-      res.status(403).json({ message: "Username or email already registered" });
-      return;
-    } else {
-      const user = await User.create({
-        username: req.body.username,
-        email: req.body.email,
-        password: req.body.password,
-      });
-
-      res.status(200).json({ message: "User created", user: user });
-    }
+    res.status(200).json({ message: "User created", user: user });
   } catch (error) {
     res.status(500).json({ message: error.message, error: error });
   }
