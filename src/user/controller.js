@@ -121,7 +121,7 @@ const sendResetLink = async (req, res) => {
     await user.save();
 
     // Send email with the token link
-    const resetUrl = `http://localhost:3000/resetPassordRequest/${token}`;
+    const resetUrl = `https://organiserbe-production.up.railway.ap/resetPassordRequest/${token}`;
     await sendEmail({
       to: user.email,
       subject: "Password Reset",
